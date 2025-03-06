@@ -1,120 +1,144 @@
-
-
-/*------------------------------- Starter Code -------------------------------*/
+/*------------------------------- Imports -------------------------------*/
 const prompt = require("prompt-sync")();
-const Customer = require("./models/customer.js")
+const Customer = require("./models/customer.js");
 const dotenv = require("dotenv");
 dotenv.config();
 const mongoose = require("mongoose");
 
-const connect = async () => {
-  // Connect to MongoDB using the MONGODB_URI specified in our .env file.
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log("Connected to MongoDB");
+/*------------------------------ String Functions -----------------------------*/
 
-  // Call the runQueries function, which will eventually hold functions to work
-  // with data in our db.
-  await runQueries();
+const promptUser = () => console.log("\nWhat is your choice: ");
+const showInvalidEntry = () => console.log(`\nThat is an invalid entry!
+Please enter a number between 1 and 5`)
 
-  // Disconnect our app from MongoDB after our queries run.
-  await mongoose.disconnect();
-  console.log("Disconnected from MongoDB");
-
-  // Close our app, bringing us back to the command line.
-  process.exit();
+const greetUser = () => console.log("Welcome to the CRM!")
+const showUserOptions = () => {
+  console.log(`\nWhat would you like to do?\n
+1. Create a customer 
+2. View all customers 
+3. Update a customer
+4. Delete a customer
+5. Exit the CRM\n`);
 };
+const showConnectMessage = () => console.log("Connected to MongoDB!")
+const showDisconnectMessage = () => console.log(`Disconnected from MongoDB!
+  Thank you for using the Customer `)
 
-const runQueries = async () => {
-  console.log("Queries running.");
-  // The functions calls to run queries in our db will go here as we write them.
+/*------------------------------ Connection to MongoDB -----------------------------*/
+
+
+const connect = async () => {
+  await mongoose.connect(process.env.MONGODB_URI);
+  showConnectMessage();
+  greetUser();
+  menu();
 };
 
 connect();
+
 /*------------------------------ Query Functions -----------------------------*/
-const createCustomer = async(name, age) => {
+
+const createCustomer = async (name, age) => {
   const customerData = {
     name: name,
-    age: age, 
-  }
-
+    age: age,
+  };
   const customer = await Customer.create(customerData);
+  console.log(
+    `\nNew customer created!\nid: ${customer.id}, -- Name: ${customer.name}, Age: ${customer.age}`
+  );
+};
 
-}
+const findCustomers = async () => {
+  const customers = await Customer.find({});
+  console.log("\nHere is a list of all customers:\n");
+  customers.forEach((customer) =>
+    console.log(
+      `id: ${customer.id}, -- Name: ${customer.name}, Age: ${customer.age}`
+    )
+  );
+};
 
-function viewAllCustomers() {
-  // grab all customers from db
-}
-function updateCustomer() {
-  // use getandupdatebyID method
-}
-function deleteCustomer() {
-  // use getanddeletebyId method
-}
-function quit() {
-  // exit program
-}
+const updateCustomer = async () => {
+  await findCustomers();
 
+  console.log(
+    "\nCopy and paste the id of the customer you would like to update:"
+  );
+  const customerId = prompt();
 
-const USER_GREETING =  "Welcome to the CRM!\n"
-const USER_QUESTION = "What would you like to do?\n"
-const USER_OPTIONS = "1. Create a customer" + 
-"\n2. View all customers" + 
-"\n3. Update a customer" +
-"\n4. Delete a customer" +
-"\n5. Exit the CRM\n";
-const PROMPT_TO_USER = "What is your choice: "
+  console.log("\nWhat is the customer's new name?");
+  let newName = prompt();
 
+  console.log("What is the customer's new age?");
+  let newAge = await parseInt(prompt());
 
-const INVALID_ENTRY = "That is an invalid entry!\nPlease enter a number between 1 and 5: ";
+  const updatedCustomer = await Customer.findByIdAndUpdate(
+    customerId,
+    { name: newName, age: newAge },
+    { new: true }
+  );
+  console.log(
+    "\nCustomer Updated! Here is the new customer's info:",
+    updatedCustomer
+  );
+};
 
+const deleteCustomer = async () => {
+  await findCustomers();
+  console.log(
+    "\nCopy and paste the id of the customer you would like to delete:"
+  );
+  const id = prompt();
+  const removedCustomer = await Customer.findByIdAndDelete(id);
+  console.log("\nRemoved customer: ", removedCustomer);
+};
 
-console.log(USER_GREETING);
-console.log(USER_QUESTION);
-console.log(USER_OPTIONS);
+/*------------------------------ CRM Functionality -----------------------------*/
 
-let userChoice = parseInt(prompt(PROMPT_TO_USER));
-let userChoiceInRange = (userChoice >= 1) && (userChoice < 5);
+const menu = async () => {
+  let userChoice;
+  while (true) {
+    showUserOptions();
+    promptUser();
+    userChoice = parseInt(prompt());
 
-while(userChoiceInRange) {
-  
-  if(userChoice === 1) {
-    let customerName = prompt("Enter customer name: ")
-    let customerAge = parseInt(prompt("Enter customer age: "))
-    console.log(`Customer ${customerName} whose age is ${customerAge} created!`)
-    createCustomer(customerName, customerAge);
-  
-  } else if(userChoice === 2){
-    
-    
-  } else if(userChoice === 3){
-    
-  } else if(userChoice === 4){
-    
-  } else if(userChoice === 5){
-    break;
-  } else {
-    console.log(INVALID_ENTRY);
+    // Check if the user input is in range
+    while (isNaN(userChoice) || userChoice < 1 || userChoice > 5) {
+      showInvalidEntry();
+      showUserOptions();
+      promptUser();
+      userChoice = parseInt(prompt());
+    }
+
+    try {
+      if (userChoice === 1) {
+        let customerName = prompt("Enter customer name: ");
+        let customerAge = parseInt(prompt("Enter customer age: "));
+        await createCustomer(customerName, customerAge);
+     
+      } else if (userChoice === 2) {
+        await findCustomers();
+      
+      } else if (userChoice === 3) {
+        await updateCustomer();
+      
+      } else if (userChoice === 4) {
+        await deleteCustomer();
+      
+      } else if (userChoice === 5) {
+        await mongoose.disconnect();
+        showDisconnectMessage();
+        process.exit(); // Exit the program
+      
+      } else {
+        showInvalidEntry();
+      }
+    } catch (TypeError) {
+      showInvalidEntry();
+    }
   }
-  
-  userChoice = parseInt(prompt(PROMPT_TO_USER));
-  console.log(USER_QUESTION);
+};
 
-}
-  
-  
-  
-  
-  
-  
-
-
-  
-
-// make greeting
-// take in user input; have to wait until user enters a number between 1 and 5
-// do...while; while, while-loop with if-conditional,
-
-
-
-
+ 
 
