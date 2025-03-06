@@ -22,7 +22,7 @@ const showUserOptions = () => {
 };
 const showConnectMessage = () => console.log("Connected to MongoDB!")
 const showDisconnectMessage = () => console.log(`Disconnected from MongoDB!
-  Thank you for using the Customer `)
+Thank you for using the CRM!`)
 
 /*------------------------------ Connection to MongoDB -----------------------------*/
 
